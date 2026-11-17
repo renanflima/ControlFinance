@@ -1,7 +1,23 @@
 ﻿using System;
+using System.IO;
+using System.Text.Json;
+
 
 List<Despesa> despesas = [];
 List<Receita> receitas = [];
+
+string caminhoArquivo = "dados.json";
+
+if (File.Exists(caminhoArquivo))
+{
+    string json = File.ReadAllText(caminhoArquivo);
+
+    DadosFinanceiros dados = JsonSerializer.Deserialize<DadosFinanceiros>(json)
+        ?? new DadosFinanceiros();
+
+    despesas = dados.Despesas;
+    receitas = dados.Receitas;
+}
 
 while (true)
 
@@ -169,10 +185,23 @@ void MenuReceitas()
                 Console.WriteLine("Informe a descrição da receita: ");
                 novaReceita.Descricao = Console.ReadLine() ?? "";
 
-                Console.WriteLine("Informe o valor da receita:");
-                novaReceita.Valor = decimal.Parse(Console.ReadLine() ?? "0");
+                while (true)
+                {
+                    Console.WriteLine("Informe o valor da receita:");
+
+                    bool valorValido = decimal.TryParse(Console.ReadLine(), out decimal valor);
+
+                    if (valorValido && valor > 0)
+                    {
+                        novaReceita.Valor = valor;
+                        break;
+                    }
+
+                    Console.WriteLine("Valor inválido. Digite um número maior que zero.");
+                }
 
                 receitas.Add(novaReceita);
+                SalvarDados();
 
                 Console.WriteLine("Receita cadastrada com sucesso!");
                 break;
@@ -257,13 +286,26 @@ void MenuDespesas()
                 Console.WriteLine("Informe a descrição da despesa: ");
                 novaDespesa.Descricao = Console.ReadLine() ?? "";
 
-               Console.WriteLine("Informe o valor da despesa:");
-                novaDespesa.Valor = decimal.Parse(Console.ReadLine() ?? "0");
+                while (true)
+                {
+                    Console.WriteLine("Informe o valor da despesa:");
+
+                    bool valorValido = decimal.TryParse(Console.ReadLine(), out decimal valor);
+
+                    if (valorValido && valor > 0)
+                    {
+                        novaDespesa.Valor = valor;
+                        break;
+                    }
+
+                    Console.WriteLine("Valor inválido. Digite um número maior que zero.");
+                }
 
                 Console.WriteLine("Informe a categoria da despesa: ");
                 novaDespesa.Categoria = Console.ReadLine() ?? "";
 
                 despesas.Add(novaDespesa);
+                SalvarDados();
 
                 Console.WriteLine("Despesa cadastrada com sucesso!");
 
@@ -310,4 +352,19 @@ decimal CalcularTotalReceitas()
     }
 
     return total;
+}
+
+void SalvarDados()
+{
+    DadosFinanceiros dados = new DadosFinanceiros();
+
+    dados.Despesas = despesas;
+    dados.Receitas = receitas;
+
+    string json = JsonSerializer.Serialize(dados, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
+
+    File.WriteAllText(caminhoArquivo, json);
 }
